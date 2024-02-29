@@ -460,19 +460,21 @@ class Particles extends AssetBase {
       this.particles.set(entity, numberOfParticles);
       const scene = this.getScene();
       const oldParticles = this.getEntity(entity);
-      const particles = this.createParticles(numberOfParticles, this.getPropertyColor(entity, oldParticles));
-      particles.position.x = oldParticles.position.x;
-      particles.position.y = oldParticles.position.y;
-      particles.position.z = oldParticles.position.z;
-      particles.rotation.x = oldParticles.rotation.x;
-      particles.rotation.y = oldParticles.rotation.y;
-      particles.rotation.z = oldParticles.rotation.z;
-      particles.scale.x = oldParticles.scale.x;
-      particles.scale.y = oldParticles.scale.y;
-      particles.scale.z = oldParticles.scale.z;
-      scene.add(particles);
-      this.updateEntity(entity, particles);
-      scene.remove(oldParticles);
+      if (oldParticles) {
+        const particles = this.createParticles(numberOfParticles, this.getPropertyColor(entity, oldParticles));
+        particles.position.x = oldParticles.position.x;
+        particles.position.y = oldParticles.position.y;
+        particles.position.z = oldParticles.position.z;
+        particles.rotation.x = oldParticles.rotation.x;
+        particles.rotation.y = oldParticles.rotation.y;
+        particles.rotation.z = oldParticles.rotation.z;
+        particles.scale.x = oldParticles.scale.x;
+        particles.scale.y = oldParticles.scale.y;
+        particles.scale.z = oldParticles.scale.z;
+        scene.add(particles);
+        this.updateEntity(entity, particles);
+        scene.remove(oldParticles);
+      }
     }
   }
   updateProperty(entity, property, value, nextUpdate = 0) {
