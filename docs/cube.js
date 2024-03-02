@@ -96,6 +96,8 @@ class Asset {
     this.generalProperties = /* @__PURE__ */ new Map();
     this.entityProperties = /* @__PURE__ */ new Map();
     this.gap = { x: 1, y: 0, z: 0 };
+    this.width = 0;
+    this.height = 0;
     this.entitiesPosition = /* @__PURE__ */ new Map();
   }
   getGeneralProperties() {
@@ -188,11 +190,15 @@ class Asset {
       this.addPropertyRotation(false);
     }
   }
-  getScene() {
+  getScene(extraInfo) {
     return this.scene;
   }
   setScene(scene) {
     this.scene = scene;
+  }
+  setSize(width, height) {
+    this.width = width;
+    this.height = height;
   }
   addLabel(id, language, label) {
     this.labels.set(`${id}-${language}`, label);
