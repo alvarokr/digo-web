@@ -86,6 +86,7 @@ var AssetPropertyId = /* @__PURE__ */ ((AssetPropertyId2) => {
   AssetPropertyId2["POSITION"] = "position";
   AssetPropertyId2["SCALE"] = "scale";
   AssetPropertyId2["ROTATION"] = "rotation";
+  AssetPropertyId2["SIZE"] = "size";
   AssetPropertyId2["GAP"] = "gap";
   return AssetPropertyId2;
 })(AssetPropertyId || {});
@@ -96,8 +97,8 @@ class Asset {
     this.generalProperties = /* @__PURE__ */ new Map();
     this.entityProperties = /* @__PURE__ */ new Map();
     this.gap = { x: 1, y: 0, z: 0 };
-    this.width = 0;
-    this.height = 0;
+    this.viewerWidth = 0;
+    this.viewerHeight = 0;
     this.entitiesPosition = /* @__PURE__ */ new Map();
   }
   getGeneralProperties() {
@@ -123,13 +124,51 @@ class Asset {
       id,
       group,
       canLinkValues,
-      type: "XYZ",
+      type: "multiNumber",
       maximum: 1e3,
       minimum: -1e3,
       decimals: 2,
       step: 0.1,
+      keys: ["x", "y", "z"],
+      names: ["X", "Y", "Z"],
       defaultValue,
       general
+    };
+    this.addProperty(general, property);
+  }
+  addPropertyXY(general, id, group) {
+    const defaultValue = {
+      x: 0,
+      y: 0
+    };
+    const property = {
+      id,
+      group,
+      type: "multiNumber",
+      maximum: 100,
+      minimum: 0,
+      decimals: 0,
+      step: 1,
+      keys: ["x", "y"],
+      names: ["X", "Y"],
+      defaultValue,
+      general
+    };
+    this.addProperty(general, property);
+  }
+  addPropertySize(general, defaultValue, other) {
+    const property = {
+      id: "size",
+      type: "multiNumber",
+      maximum: 100,
+      minimum: 0,
+      decimals: 0,
+      step: 1,
+      defaultValue,
+      general,
+      keys: ["w", "h"],
+      icons: ["SwapHoriz", "SwapVert"],
+      ...other
     };
     this.addProperty(general, property);
   }
@@ -196,9 +235,9 @@ class Asset {
   setScene(scene) {
     this.scene = scene;
   }
-  setSize(width, height) {
-    this.width = width;
-    this.height = height;
+  setViewerSize(width, height) {
+    this.viewerWidth = width;
+    this.viewerHeight = height;
   }
   addLabel(id, language, label) {
     this.labels.set(`${id}-${language}`, label);

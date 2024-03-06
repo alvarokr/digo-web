@@ -80,18 +80,14 @@ class Helper {
     }
   }
 }
-var AssetPropertyType = /* @__PURE__ */ ((AssetPropertyType2) => {
-  AssetPropertyType2["STRING"] = "string";
-  AssetPropertyType2["NUMBER"] = "number";
-  AssetPropertyType2["BOOLEAN"] = "boolean";
-  AssetPropertyType2["OPTIONS"] = "options";
-  AssetPropertyType2["IMAGE"] = "image";
-  AssetPropertyType2["COLOR"] = "color";
-  AssetPropertyType2["MATERIAL"] = "material";
-  AssetPropertyType2["TYPOGRAPHY"] = "typography";
-  AssetPropertyType2["XYZ"] = "XYZ";
-  return AssetPropertyType2;
-})(AssetPropertyType || {});
+var AssetPropertyId = /* @__PURE__ */ ((AssetPropertyId2) => {
+  AssetPropertyId2["POSITION"] = "position";
+  AssetPropertyId2["SCALE"] = "scale";
+  AssetPropertyId2["ROTATION"] = "rotation";
+  AssetPropertyId2["SIZE"] = "size";
+  AssetPropertyId2["GAP"] = "gap";
+  return AssetPropertyId2;
+})(AssetPropertyId || {});
 class Asset {
   constructor() {
     this.labels = /* @__PURE__ */ new Map();
@@ -99,8 +95,8 @@ class Asset {
     this.generalProperties = /* @__PURE__ */ new Map();
     this.entityProperties = /* @__PURE__ */ new Map();
     this.gap = { x: 1, y: 0, z: 0 };
-    this.width = 0;
-    this.height = 0;
+    this.viewerWidth = 0;
+    this.viewerHeight = 0;
     this.entitiesPosition = /* @__PURE__ */ new Map();
   }
   getGeneralProperties() {
@@ -126,13 +122,52 @@ class Asset {
       id,
       group,
       canLinkValues,
-      type: "XYZ",
+      type: "multiNumber",
       maximum: 1e3,
       minimum: -1e3,
       decimals: 2,
       step: 0.1,
+      keys: ["x", "y", "z"],
+      names: ["X", "Y", "Z"],
       defaultValue,
       general
+    };
+    this.addProperty(general, property);
+  }
+  addPropertyXY(general, id, x2, y2, group) {
+    const defaultValue = {
+      x: x2 ?? 0,
+      y: y2 ?? 0
+    };
+    const property = {
+      id,
+      group,
+      type: "multiNumber",
+      maximum: 100,
+      minimum: -100,
+      decimals: 0,
+      step: 1,
+      keys: ["x", "y"],
+      names: ["X", "Y"],
+      defaultValue,
+      general
+    };
+    this.addProperty(general, property);
+  }
+  addPropertySize(general, id, defaultValue, group, other) {
+    const property = {
+      id,
+      group,
+      type: "multiNumber",
+      maximum: 100,
+      minimum: 0,
+      decimals: 0,
+      step: 1,
+      defaultValue,
+      general,
+      keys: ["w", "h"],
+      icons: ["SwapHoriz", "SwapVert"],
+      ...other
     };
     this.addProperty(general, property);
   }
@@ -150,6 +185,26 @@ class Asset {
     };
     this.addProperty(general, property);
   }
+  addPropertyString(general, id, defaultValue, group) {
+    const property = {
+      id,
+      group,
+      type: "string",
+      defaultValue,
+      general
+    };
+    this.addProperty(general, property);
+  }
+  addPropertyFont(general, id, defaultValue, group) {
+    const property = {
+      id,
+      group,
+      type: "font",
+      defaultValue,
+      general
+    };
+    this.addProperty(general, property);
+  }
   addPropertyColor(general, id, defaultValue, group) {
     const property = {
       id,
@@ -157,6 +212,18 @@ class Asset {
       type: "color",
       defaultValue,
       general
+    };
+    this.addProperty(general, property);
+  }
+  addPropertyOptions(general, id, defaultValue, keys, icons, group) {
+    const property = {
+      id,
+      group,
+      type: "options",
+      defaultValue,
+      general,
+      keys,
+      icons
     };
     this.addProperty(general, property);
   }
@@ -199,9 +266,9 @@ class Asset {
   setScene(scene) {
     this.scene = scene;
   }
-  setSize(width, height) {
-    this.width = width;
-    this.height = height;
+  setViewerSize(width, height) {
+    this.viewerWidth = width;
+    this.viewerHeight = height;
   }
   addLabel(id, language, label) {
     this.labels.set(`${id}-${language}`, label);
@@ -611,78 +678,214 @@ n = s.slice, l = { __e: function(n2, l2, u2, t) {
 }, b.prototype.render = g, i = [], r = "function" == typeof Promise ? Promise.prototype.then.bind(Promise.resolve()) : setTimeout, f = function(n2, l2) {
   return n2.__v.__b - l2.__v.__b;
 }, C.__r = 0;
-const properties = {
-  position: {
-    x: 0,
-    y: 0
-  },
-  width: 0,
-  height: 0
-};
-class BasicTitles extends Asset {
-  constructor(entities) {
+class DigoAssetHTML extends Asset {
+  constructor(properties2) {
     super();
-    this.element = null;
-    this.addPropertyXY(true, "position");
-    entities.forEach((entity) => {
-      this.createEntity(entity);
-    });
+    this.htmlSceneElement = null;
+    this.properties = properties2;
   }
-  addPropertyXY(general, id) {
-    const property = {
-      id,
-      type: AssetPropertyType.XYZ,
-      maximum: 100,
-      minimum: 0,
-      decimals: 0,
-      step: 1,
-      defaultValue: { x: 50, y: 50 },
-      is2D: true,
-      general
-    };
-    this.addProperty(general, property);
-  }
-  render() {
-    if (this.element) {
-      B(/* @__PURE__ */ y(HTMLGeneric, null), this.element);
-    }
-  }
-  getScene(elementId) {
-    this.element = document.getElementById(elementId);
-    this.render();
-    return this.element;
-  }
-  setSize(width, height) {
-    super.setSize(width, height);
-    properties.width = width;
-    properties.height = height;
-    this.render();
+  static getCSSColor(value) {
+    return "#" + Math.round(value).toString(16).padStart(6, "0");
   }
   createEntity(id) {
     this.addEntity(id, "");
   }
+  getScene(elementId) {
+    this.htmlSceneElement = document.getElementById(elementId);
+    this.render();
+    return this.htmlSceneElement;
+  }
+  setViewerSize(width, height) {
+    super.setViewerSize(width, height);
+    this.properties.viewerWidth = width;
+    this.properties.viewerHeight = height;
+    this.render();
+  }
   updateProperty(entity, property, value, nextUpdate = 0) {
-    if (property === "position") {
-      properties.position.x = value.x;
-      properties.position.y = value.y;
-      this.render();
+    var _a, _b;
+    const splittedProperties = property.split("/");
+    let currentProperty = this.properties.general;
+    splittedProperties.forEach((id, index) => {
+      if (currentProperty) {
+        if (index + 1 === splittedProperties.length) {
+          currentProperty[id] = value;
+        } else {
+          currentProperty = currentProperty[id];
+        }
+      }
+    });
+    if (property.endsWith("/family") && property.toLowerCase().indexOf("font") !== 0) {
+      (_a = Helper.getGlobal()) == null ? void 0 : _a.loadFont(value);
+    } else {
+      if (value && value.family && property.toLowerCase().indexOf("font") !== 0) {
+        (_b = Helper.getGlobal()) == null ? void 0 : _b.loadFont(value.family);
+      }
     }
+    this.render();
   }
   getProperty(entity, property) {
-    if (property === "position") {
-      return properties.position;
+    const splittedProperties = property.split("/");
+    let currentProperty = this.properties.general;
+    for (let i2 = 0; i2 < splittedProperties.length; i2++) {
+      if (currentProperty) {
+        if (i2 + 1 === splittedProperties.length) {
+          return currentProperty[splittedProperties[i2]];
+        } else {
+          currentProperty = currentProperty[splittedProperties[i2]];
+        }
+      }
     }
     return 0;
   }
 }
+const ALIGN_KEYS = ["left", "center", "justify", "right"];
+const ALIGN_ICONS = ["FormatAlignLeft", "FormatAlignCenter", "FormatAlignJustify", "FormatAlignRight"];
+const properties = {
+  viewerWidth: 0,
+  viewerHeight: 0,
+  general: {
+    backgroundColor: 13421772,
+    opacity: 80,
+    border: {
+      color: 0,
+      size: 1,
+      radius: 6
+    },
+    position: {
+      x: 1,
+      y: 1
+    },
+    size: {
+      w: 50,
+      h: 98
+    },
+    title: {
+      text: "Title text",
+      font: {
+        family: "Londrina Outline",
+        size: 5,
+        weight: "normal",
+        italic: false
+      },
+      align: "left",
+      color: 0
+    },
+    subtitle: {
+      text: "Subtitle text",
+      font: {
+        family: "Orbitron",
+        size: 4,
+        weight: "bold",
+        italic: false
+      },
+      align: "right",
+      color: 255
+    },
+    footer: {
+      text: "Footer text",
+      font: {
+        family: "Audiowide",
+        size: 4,
+        weight: "bold",
+        italic: false
+      },
+      align: "center",
+      color: 16711935
+    }
+  }
+};
+class BasicTitles extends DigoAssetHTML {
+  constructor(entities) {
+    var _a, _b, _c;
+    super(properties);
+    this.addLabel("align", "en", "Align");
+    this.addLabel("align", "es", "Alineación");
+    this.addLabel("backgroundColor", "en", "Background color");
+    this.addLabel("backgroundColor", "es", "Color de fondo");
+    this.addLabel("color", "en", "Color");
+    this.addLabel("color", "es", "Color");
+    this.addLabel("border", "en", "Border");
+    this.addLabel("border", "es", "Borde");
+    this.addLabel("footer", "en", "Footer");
+    this.addLabel("footer", "es", "Pie");
+    this.addLabel("opacity", "en", "Opacity");
+    this.addLabel("opacity", "es", "Opacidad");
+    this.addLabel("radius", "en", "Radius");
+    this.addLabel("radius", "es", "Radio");
+    this.addLabel("subtitle", "en", "Subtitle");
+    this.addLabel("subtitle", "es", "Subtítulo");
+    this.addLabel("text", "en", "Text");
+    this.addLabel("text", "es", "Texto");
+    this.addLabel("title", "en", "Title");
+    this.addLabel("title", "es", "Título");
+    this.addPropertyXY(true, AssetPropertyId.POSITION, properties.general.position.x, properties.general.position.y);
+    this.addPropertySize(true, AssetPropertyId.SIZE, { w: properties.general.size.w, h: properties.general.size.h });
+    this.addPropertyColor(true, "backgroundColor", properties.general.backgroundColor);
+    this.addPropertyNumber(true, "opacity", 0, 100, 0, 1, properties.general.opacity);
+    this.addPropertyNumber(true, "border/size", 0, 1e3, 0, 1, properties.general.border.size, "border");
+    this.addPropertyNumber(true, "border/radius", 0, 1e3, 0, 1, properties.general.border.radius, "border");
+    this.addPropertyColor(true, "border/color", properties.general.border.color, "border");
+    this.addLiteralProperties("title");
+    this.addLiteralProperties("subtitle");
+    this.addLiteralProperties("footer");
+    entities.forEach((entity) => {
+      this.createEntity(entity);
+    });
+    (_a = Helper.getGlobal()) == null ? void 0 : _a.loadFont(properties.general.title.font.family);
+    (_b = Helper.getGlobal()) == null ? void 0 : _b.loadFont(properties.general.subtitle.font.family);
+    (_c = Helper.getGlobal()) == null ? void 0 : _c.loadFont(properties.general.footer.font.family);
+  }
+  addLiteralProperties(literal) {
+    this.addPropertyString(true, `${literal}/text`, properties.general[literal].text, literal);
+    this.addPropertyOptions(true, `${literal}/align`, properties.general[literal].align, ALIGN_KEYS, ALIGN_ICONS, literal);
+    this.addPropertyColor(true, `${literal}/color`, properties.general[literal].color, literal);
+    this.addPropertyFont(true, `${literal}/font`, properties.general[literal].font, literal);
+  }
+  render() {
+    if (this.htmlSceneElement) {
+      B(/* @__PURE__ */ y(HTMLGeneric, null), this.htmlSceneElement);
+    }
+  }
+}
 function HTMLGeneric() {
-  const fontSize = properties.width * 0.05;
+  function renderLiteral(literal) {
+    return /* @__PURE__ */ y(
+      "div",
+      {
+        style: {
+          fontFamily: literal.font.family,
+          fontSize: properties.viewerWidth * literal.font.size / 100,
+          fontWeight: literal.font.weight,
+          fontStyle: literal.font.italic ? "italic" : "normal",
+          justifySelf: literal.align,
+          color: DigoAssetHTML.getCSSColor(literal.color ?? 0),
+          padding: "0px 10px"
+        }
+      },
+      literal.text
+    );
+  }
   return /* @__PURE__ */ y("div", { style: {
     position: "relative",
-    fontSize,
-    left: properties.width * (properties.position.x / 100),
-    top: (properties.height - fontSize) * (properties.position.y / 100)
-  } }, `This is Basic titles!!!`);
+    backgroundColor: DigoAssetHTML.getCSSColor(properties.general.backgroundColor),
+    opacity: properties.general.opacity / 100,
+    width: `${properties.viewerWidth * (properties.general.size.w / 100)}px`,
+    height: `${properties.viewerHeight * (properties.general.size.h / 100)}px`,
+    left: properties.viewerWidth * (properties.general.position.x / 100),
+    top: properties.viewerHeight * (properties.general.position.y / 100),
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gridTemplateRows: "auto auto 1fr auto",
+    gap: "5px",
+    border: `${properties.general.border.size}px solid ${DigoAssetHTML.getCSSColor(properties.general.border.color)}`,
+    borderRadius: `${properties.general.border.radius}px`
+  } }, renderLiteral(properties.general.title), renderLiteral(properties.general.subtitle), /* @__PURE__ */ y(
+    "div",
+    {
+      style: {}
+    },
+    " "
+  ), renderLiteral(properties.general.footer));
 }
 const digoAssetData = {
   info: {
