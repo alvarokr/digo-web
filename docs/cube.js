@@ -136,17 +136,17 @@ class Asset {
     };
     this.addProperty(general, property);
   }
-  addPropertyXY(general, id, group) {
+  addPropertyXY(general, id, x, y, group) {
     const defaultValue = {
-      x: 0,
-      y: 0
+      x: x ?? 0,
+      y: y ?? 0
     };
     const property = {
       id,
       group,
       type: "multiNumber",
       maximum: 100,
-      minimum: 0,
+      minimum: -100,
       decimals: 0,
       step: 1,
       keys: ["x", "y"],
@@ -156,9 +156,10 @@ class Asset {
     };
     this.addProperty(general, property);
   }
-  addPropertySize(general, defaultValue, other) {
+  addPropertySize(general, id, defaultValue, group, other) {
     const property = {
-      id: "size",
+      id,
+      group,
       type: "multiNumber",
       maximum: 100,
       minimum: 0,
@@ -186,6 +187,26 @@ class Asset {
     };
     this.addProperty(general, property);
   }
+  addPropertyString(general, id, defaultValue, group) {
+    const property = {
+      id,
+      group,
+      type: "string",
+      defaultValue,
+      general
+    };
+    this.addProperty(general, property);
+  }
+  addPropertyFont(general, id, defaultValue, group) {
+    const property = {
+      id,
+      group,
+      type: "font",
+      defaultValue,
+      general
+    };
+    this.addProperty(general, property);
+  }
   addPropertyColor(general, id, defaultValue, group) {
     const property = {
       id,
@@ -193,6 +214,18 @@ class Asset {
       type: "color",
       defaultValue,
       general
+    };
+    this.addProperty(general, property);
+  }
+  addPropertyOptions(general, id, defaultValue, keys, icons, group) {
+    const property = {
+      id,
+      group,
+      type: "options",
+      defaultValue,
+      general,
+      keys,
+      icons
     };
     this.addProperty(general, property);
   }
@@ -446,8 +479,6 @@ class DigoAssetThree extends Asset {
 class AssetBase extends DigoAssetThree {
   constructor() {
     super();
-    this.addLabel("color", "en", "Color");
-    this.addLabel("color", "es", "Color");
   }
 }
 class Cube extends AssetBase {

@@ -678,37 +678,68 @@ n = s.slice, l = { __e: function(n2, l2, u2, t) {
 }, b.prototype.render = g, i = [], r = "function" == typeof Promise ? Promise.prototype.then.bind(Promise.resolve()) : setTimeout, f = function(n2, l2) {
   return n2.__v.__b - l2.__v.__b;
 }, C.__r = 0;
+function DigoAssetHTMLComponent({ assetRenderer }) {
+  return assetRenderer();
+}
 class DigoAssetHTML extends Asset {
-  constructor(properties2) {
+  constructor(properties) {
     super();
     this.htmlSceneElement = null;
-    this.properties = properties2;
+    this.needsRender = true;
+    this.childProperties = properties;
+    this.initialize(properties);
+    setInterval(() => {
+      if (this.htmlSceneElement && this.needsRender) {
+        this.needsRender = false;
+        this.render();
+      }
+    }, 1e3 / 60);
   }
-  static getCSSColor(value) {
-    return "#" + Math.round(value).toString(16).padStart(6, "0");
+  forceRender() {
+    this.needsRender = true;
   }
-  createEntity(id) {
-    this.addEntity(id, "");
+  deleteEntity(id) {
+    super.deleteEntity(id);
+    this.forceRender();
+  }
+  getCSSColor(value) {
+    return `#${Math.round(value).toString(16).padStart(6, "0")}`;
+  }
+  getFontStyles(font, width) {
+    if (font) {
+      return {
+        fontFamily: font.family,
+        fontSize: width * font.size / 100,
+        fontWeight: font.weight,
+        fontStyle: font.italic ? "italic" : "normal",
+        color: this.getCSSColor(font.color ?? 0)
+      };
+    }
+    return {};
   }
   getScene(elementId) {
     this.htmlSceneElement = document.getElementById(elementId);
-    this.render();
+    this.forceRender();
     return this.htmlSceneElement;
   }
   setViewerSize(width, height) {
     super.setViewerSize(width, height);
-    this.properties.viewerWidth = width;
-    this.properties.viewerHeight = height;
-    this.render();
+    this.childProperties.viewerWidth = width;
+    this.childProperties.viewerHeight = height;
+    this.forceRender();
   }
   updateProperty(entity, property, value, nextUpdate = 0) {
     var _a, _b;
     const splittedProperties = property.split("/");
-    let currentProperty = this.properties.general;
+    let currentProperty = entity ? this.getEntity(entity) : this.childProperties.general;
     splittedProperties.forEach((id, index) => {
       if (currentProperty) {
         if (index + 1 === splittedProperties.length) {
-          currentProperty[id] = value;
+          if (typeof value === "object") {
+            currentProperty[id] = { ...currentProperty[id], ...value };
+          } else {
+            currentProperty[id] = value;
+          }
         } else {
           currentProperty = currentProperty[id];
         }
@@ -716,23 +747,20 @@ class DigoAssetHTML extends Asset {
     });
     if (property.endsWith("/family") && property.toLowerCase().indexOf("font") !== 0) {
       (_a = Helper.getGlobal()) == null ? void 0 : _a.loadFont(value);
-    } else {
-      if (value && value.family && property.toLowerCase().indexOf("font") !== 0) {
-        (_b = Helper.getGlobal()) == null ? void 0 : _b.loadFont(value.family);
-      }
+    } else if (value && value.family && property.toLowerCase().indexOf("font") !== 0) {
+      (_b = Helper.getGlobal()) == null ? void 0 : _b.loadFont(value.family);
     }
-    this.render();
+    this.forceRender();
   }
   getProperty(entity, property) {
     const splittedProperties = property.split("/");
-    let currentProperty = this.properties.general;
+    let currentProperty = entity ? this.getEntity(entity) : this.childProperties.general;
     for (let i2 = 0; i2 < splittedProperties.length; i2++) {
       if (currentProperty) {
         if (i2 + 1 === splittedProperties.length) {
           return currentProperty[splittedProperties[i2]];
-        } else {
-          currentProperty = currentProperty[splittedProperties[i2]];
         }
+        currentProperty = currentProperty[splittedProperties[i2]];
       }
     }
     return 0;
@@ -740,7 +768,7 @@ class DigoAssetHTML extends Asset {
 }
 const ALIGN_KEYS = ["left", "center", "justify", "right"];
 const ALIGN_ICONS = ["FormatAlignLeft", "FormatAlignCenter", "FormatAlignJustify", "FormatAlignRight"];
-const properties = {
+const defaultProperties = {
   viewerWidth: 0,
   viewerHeight: 0,
   general: {
@@ -756,60 +784,84 @@ const properties = {
       y: 1
     },
     size: {
-      w: 50,
+      w: 45,
       h: 98
     },
     title: {
       text: "Title text",
       font: {
-        family: "Londrina Outline",
-        size: 5,
-        weight: "normal",
-        italic: false
+        family: "Bebas Neue",
+        size: 12.84,
+        weight: "bold",
+        italic: false,
+        color: 4605549
       },
-      align: "left",
-      color: 0
+      align: "left"
     },
     subtitle: {
-      text: "Subtitle text",
+      text: "Subitle text",
       font: {
-        family: "Orbitron",
-        size: 4,
+        family: "Goldman",
+        size: 9.25,
         weight: "bold",
-        italic: false
+        italic: false,
+        color: 1973793
       },
-      align: "right",
-      color: 255
+      align: "right"
     },
     footer: {
       text: "Footer text",
       font: {
-        family: "Audiowide",
-        size: 4,
+        family: "Agdasima",
+        size: 8.73,
         weight: "bold",
-        italic: false
+        italic: false,
+        color: 8880263
       },
-      align: "center",
-      color: 16711935
+      align: "center"
+    },
+    entityFonts: {
+      title: {
+        family: "Audiowide",
+        size: 7.96,
+        weight: "normal",
+        italic: false,
+        color: 0
+      },
+      subtitle: {
+        family: "Kode Mono",
+        size: 7.45,
+        weight: "normal",
+        italic: false,
+        color: 3424323
+      }
     }
   }
 };
 class BasicTitles extends DigoAssetHTML {
   constructor(entities) {
+    super(JSON.parse(JSON.stringify(defaultProperties)));
+    entities.forEach((entity) => {
+      this.createEntity(entity);
+    });
+  }
+  initialize(properties) {
     var _a, _b, _c;
-    super(properties);
+    this.properties = properties;
     this.addLabel("align", "en", "Align");
     this.addLabel("align", "es", "Alineación");
     this.addLabel("backgroundColor", "en", "Background color");
     this.addLabel("backgroundColor", "es", "Color de fondo");
-    this.addLabel("color", "en", "Color");
-    this.addLabel("color", "es", "Color");
     this.addLabel("border", "en", "Border");
     this.addLabel("border", "es", "Borde");
+    this.addLabel("entityFonts", "en", "Entity fonts");
+    this.addLabel("entityFonts", "es", "Fuentes de entidades");
     this.addLabel("footer", "en", "Footer");
     this.addLabel("footer", "es", "Pie");
     this.addLabel("opacity", "en", "Opacity");
     this.addLabel("opacity", "es", "Opacidad");
+    this.addLabel("progress", "en", "Progress");
+    this.addLabel("progress", "es", "Progreso");
     this.addLabel("radius", "en", "Radius");
     this.addLabel("radius", "es", "Radio");
     this.addLabel("subtitle", "en", "Subtitle");
@@ -818,74 +870,183 @@ class BasicTitles extends DigoAssetHTML {
     this.addLabel("text", "es", "Texto");
     this.addLabel("title", "en", "Title");
     this.addLabel("title", "es", "Título");
-    this.addPropertyXY(true, AssetPropertyId.POSITION, properties.general.position.x, properties.general.position.y);
-    this.addPropertySize(true, AssetPropertyId.SIZE, { w: properties.general.size.w, h: properties.general.size.h });
-    this.addPropertyColor(true, "backgroundColor", properties.general.backgroundColor);
-    this.addPropertyNumber(true, "opacity", 0, 100, 0, 1, properties.general.opacity);
-    this.addPropertyNumber(true, "border/size", 0, 1e3, 0, 1, properties.general.border.size, "border");
-    this.addPropertyNumber(true, "border/radius", 0, 1e3, 0, 1, properties.general.border.radius, "border");
-    this.addPropertyColor(true, "border/color", properties.general.border.color, "border");
+    this.addPropertyXY(true, AssetPropertyId.POSITION, this.properties.general.position.x, this.properties.general.position.y);
+    this.addPropertySize(true, AssetPropertyId.SIZE, { w: this.properties.general.size.w, h: this.properties.general.size.h });
+    this.addPropertyColor(true, "backgroundColor", this.properties.general.backgroundColor);
+    this.addPropertyNumber(true, "opacity", 0, 100, 0, 1, this.properties.general.opacity);
+    this.addPropertyNumber(true, "border/size", 0, 1e3, 0, 1, this.properties.general.border.size, "border");
+    this.addPropertyNumber(true, "border/radius", 0, 1e3, 0, 1, this.properties.general.border.radius, "border");
+    this.addPropertyColor(true, "border/color", this.properties.general.border.color, "border");
     this.addLiteralProperties("title");
     this.addLiteralProperties("subtitle");
     this.addLiteralProperties("footer");
-    entities.forEach((entity) => {
-      this.createEntity(entity);
-    });
-    (_a = Helper.getGlobal()) == null ? void 0 : _a.loadFont(properties.general.title.font.family);
-    (_b = Helper.getGlobal()) == null ? void 0 : _b.loadFont(properties.general.subtitle.font.family);
-    (_c = Helper.getGlobal()) == null ? void 0 : _c.loadFont(properties.general.footer.font.family);
+    this.addPropertyFont(true, `entityFonts/title`, { ...this.properties.general.entityFonts.title }, "entityFonts");
+    this.addPropertyFont(true, `entityFonts/subtitle`, { ...this.properties.general.entityFonts.subtitle }, "entityFonts");
+    this.addPropertyString(false, "title", "");
+    this.addPropertyString(false, "subtitle", "");
+    this.addPropertyNumber(false, "progress", 0, 100, 2, 0.01, 0);
+    this.addPropertyColor(false, "color", 0);
+    (_a = Helper.getGlobal()) == null ? void 0 : _a.loadFont(this.properties.general.title.font.family);
+    (_b = Helper.getGlobal()) == null ? void 0 : _b.loadFont(this.properties.general.subtitle.font.family);
+    (_c = Helper.getGlobal()) == null ? void 0 : _c.loadFont(this.properties.general.footer.font.family);
+  }
+  createEntity(id) {
+    const data = {
+      title: "",
+      subtitle: "1234567890",
+      color: 0,
+      progress: 25
+    };
+    this.addEntity(id, data);
   }
   addLiteralProperties(literal) {
-    this.addPropertyString(true, `${literal}/text`, properties.general[literal].text, literal);
-    this.addPropertyOptions(true, `${literal}/align`, properties.general[literal].align, ALIGN_KEYS, ALIGN_ICONS, literal);
-    this.addPropertyColor(true, `${literal}/color`, properties.general[literal].color, literal);
-    this.addPropertyFont(true, `${literal}/font`, properties.general[literal].font, literal);
+    this.addPropertyString(true, `${literal}/text`, this.properties.general[literal].text, literal);
+    this.addPropertyOptions(true, `${literal}/align`, this.properties.general[literal].align, ALIGN_KEYS, ALIGN_ICONS, literal);
+    this.addPropertyFont(true, `${literal}/font`, { ...this.properties.general[literal].font }, literal);
   }
   render() {
-    if (this.htmlSceneElement) {
-      B(/* @__PURE__ */ y(HTMLGeneric, null), this.htmlSceneElement);
-    }
+    B(/* @__PURE__ */ y(DigoAssetHTMLComponent, { assetRenderer: () => this.renderComponent() }), this.htmlSceneElement);
   }
-}
-function HTMLGeneric() {
-  function renderLiteral(literal) {
+  getFontWidthReference() {
+    return this.properties.viewerWidth * this.properties.general.size.w / 100;
+  }
+  renderLiteral(literal) {
     return /* @__PURE__ */ y(
       "div",
       {
         style: {
-          fontFamily: literal.font.family,
-          fontSize: properties.viewerWidth * literal.font.size / 100,
-          fontWeight: literal.font.weight,
-          fontStyle: literal.font.italic ? "italic" : "normal",
           justifySelf: literal.align,
-          color: DigoAssetHTML.getCSSColor(literal.color ?? 0),
-          padding: "0px 10px"
+          padding: "0px 10px",
+          ...this.getFontStyles(literal.font, this.getFontWidthReference())
         }
       },
       literal.text
     );
   }
-  return /* @__PURE__ */ y("div", { style: {
-    position: "relative",
-    backgroundColor: DigoAssetHTML.getCSSColor(properties.general.backgroundColor),
-    opacity: properties.general.opacity / 100,
-    width: `${properties.viewerWidth * (properties.general.size.w / 100)}px`,
-    height: `${properties.viewerHeight * (properties.general.size.h / 100)}px`,
-    left: properties.viewerWidth * (properties.general.position.x / 100),
-    top: properties.viewerHeight * (properties.general.position.y / 100),
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gridTemplateRows: "auto auto 1fr auto",
-    gap: "5px",
-    border: `${properties.general.border.size}px solid ${DigoAssetHTML.getCSSColor(properties.general.border.color)}`,
-    borderRadius: `${properties.general.border.radius}px`
-  } }, renderLiteral(properties.general.title), renderLiteral(properties.general.subtitle), /* @__PURE__ */ y(
-    "div",
-    {
-      style: {}
-    },
-    " "
-  ), renderLiteral(properties.general.footer));
+  renderEntityMark(data) {
+    return /* @__PURE__ */ y(
+      "div",
+      {
+        style: {
+          width: "10px",
+          height: "100%",
+          border: `2px solid ${this.getCSSColor(this.properties.general.border.color)}`,
+          borderRadius: "15px",
+          backgroundColor: this.getCSSColor(data.color),
+          justifySelf: "center",
+          opacity: 0.5
+        }
+      }
+    );
+  }
+  renderEntityProgress(data) {
+    return /* @__PURE__ */ y(
+      "div",
+      {
+        style: {
+          width: "95%",
+          height: "10px",
+          border: `1px solid ${this.getCSSColor(this.properties.general.border.color)}`,
+          borderRadius: "15px",
+          backgroundColor: "#00000000",
+          alignSelf: "end",
+          marginBottom: "1%"
+        }
+      },
+      data.progress > 0.1 && /* @__PURE__ */ y(
+        "div",
+        {
+          style: {
+            width: `${data.progress}%`,
+            height: "10px",
+            borderRadius: "15px",
+            backgroundColor: this.getCSSColor(data.color)
+          }
+        }
+      )
+    );
+  }
+  renderEntityData(entity, data) {
+    return /* @__PURE__ */ y(
+      "div",
+      {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gridTemplateRows: "1fr 1fr 1fr"
+        }
+      },
+      /* @__PURE__ */ y(
+        "div",
+        {
+          style: {
+            alignSelf: "start",
+            marginTop: "1%",
+            ...this.getFontStyles(this.properties.general.entityFonts.title, this.getFontWidthReference())
+          }
+        },
+        data.title || entity
+      ),
+      /* @__PURE__ */ y(
+        "div",
+        {
+          style: {
+            alignSelf: "center",
+            ...this.getFontStyles(this.properties.general.entityFonts.subtitle, this.getFontWidthReference())
+          }
+        },
+        data.subtitle || ""
+      ),
+      this.renderEntityProgress(data)
+    );
+  }
+  renderEntity(entity, data) {
+    return /* @__PURE__ */ y(
+      "div",
+      {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "10% 1fr",
+          gridTemplateRows: "1fr",
+          gap: "5px"
+        }
+      },
+      this.renderEntityMark(data),
+      this.renderEntityData(entity, data)
+    );
+  }
+  renderComponent() {
+    const totalEntities = this.getEntities().length;
+    return /* @__PURE__ */ y("div", { style: {
+      position: "relative",
+      backgroundColor: this.getCSSColor(this.properties.general.backgroundColor),
+      opacity: this.properties.general.opacity / 100,
+      width: `${this.properties.viewerWidth * (this.properties.general.size.w / 100)}px`,
+      height: `${this.properties.viewerHeight * (this.properties.general.size.h / 100)}px`,
+      left: this.properties.viewerWidth * (this.properties.general.position.x / 100),
+      top: this.properties.viewerHeight * (this.properties.general.position.y / 100),
+      display: "grid",
+      gridTemplateColumns: "1fr",
+      gridTemplateRows: "auto auto 1fr auto",
+      gap: "5px",
+      border: `${this.properties.general.border.size}px solid ${this.getCSSColor(this.properties.general.border.color)}`,
+      borderRadius: `${this.properties.general.border.radius}px`
+    } }, this.renderLiteral(this.properties.general.title), this.renderLiteral(this.properties.general.subtitle), /* @__PURE__ */ y(
+      "div",
+      {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gridTemplateRows: `repeat(${totalEntities}, ${100 / totalEntities}%)`,
+          gap: "10px",
+          padding: "10px 10px"
+        }
+      },
+      this.getEntities().map((entity) => {
+        return this.renderEntity(entity, this.getEntity(entity));
+      })
+    ), this.renderLiteral(this.properties.general.footer));
+  }
 }
 const digoAssetData = {
   info: {
