@@ -866,7 +866,7 @@ const digoAssetData = {
       es: "Fondo básico"
     },
     category: "legends",
-    icon: "TextFields",
+    icon: "Panorama",
     vendor: "Digo",
     license: "MIT",
     version: "1.0",
