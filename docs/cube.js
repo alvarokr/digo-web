@@ -47,7 +47,11 @@ class Helper {
   static createGlobal() {
     if (!Helper.getGlobal()) {
       window.digoAPI = {
-        asset: {}
+        asset: {},
+        loadFont: (fontName) => {
+        },
+        forceRefresh: () => {
+        }
       };
     }
   }
@@ -88,6 +92,8 @@ var AssetPropertyId = /* @__PURE__ */ ((AssetPropertyId2) => {
   AssetPropertyId2["ROTATION"] = "rotation";
   AssetPropertyId2["SIZE"] = "size";
   AssetPropertyId2["GAP"] = "gap";
+  AssetPropertyId2["LAYOUT_POSITION"] = "layoutPosition";
+  AssetPropertyId2["Z_INDEX"] = "zIndex";
   return AssetPropertyId2;
 })(AssetPropertyId || {});
 class Asset {
@@ -106,6 +112,12 @@ class Asset {
   }
   getEntityProperties() {
     return Array.from(this.entityProperties.values());
+  }
+  getLayoutPosition() {
+    return "below";
+  }
+  getZIndex() {
+    return 0;
   }
   addProperty(general, property) {
     if (general) {
