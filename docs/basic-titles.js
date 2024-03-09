@@ -723,8 +723,8 @@ class DigoAssetHTML extends Asset {
     super.deleteEntity(id);
     this.forceRender();
   }
-  getCSSColor(value, opacity = 100) {
-    return `#${Math.round(value).toString(16).padStart(6, "0")}${Math.round(opacity * 255 / 100).toString(16).padStart(2, "0")}`;
+  getCSSColor(value) {
+    return `#${value.toString(16)}`;
   }
   getFontStyles(font, width) {
     if (font) {
@@ -814,8 +814,7 @@ const defaultProperties = {
   viewerWidth: 0,
   viewerHeight: 0,
   general: {
-    backgroundColor: 13421772,
-    opacity: 80,
+    backgroundColor: 3435973632,
     border: {
       color: 0,
       size: 1,
@@ -900,8 +899,6 @@ class BasicTitles extends DigoAssetHTML {
     this.addLabel("entityFonts", "es", "Fuentes de entidades");
     this.addLabel("footer", "en", "Footer");
     this.addLabel("footer", "es", "Pie");
-    this.addLabel("opacity", "en", "Opacity");
-    this.addLabel("opacity", "es", "Opacidad");
     this.addLabel("progress", "en", "Progress");
     this.addLabel("progress", "es", "Progreso");
     this.addLabel("radius", "en", "Radius");
@@ -915,7 +912,6 @@ class BasicTitles extends DigoAssetHTML {
     this.addPropertyXY(true, AssetPropertyId.POSITION, this.properties.general.position.x, this.properties.general.position.y);
     this.addPropertySize(true, AssetPropertyId.SIZE, { w: this.properties.general.size.w, h: this.properties.general.size.h });
     this.addPropertyColor(true, "backgroundColor", this.properties.general.backgroundColor);
-    this.addPropertyNumber(true, "opacity", 0, 100, 0, 1, this.properties.general.opacity);
     this.addPropertyNumber(true, "border/size", 0, 1e3, 0, 1, this.properties.general.border.size, "border");
     this.addPropertyNumber(true, "border/radius", 0, 1e3, 0, 1, this.properties.general.border.radius, "border");
     this.addPropertyColor(true, "border/color", this.properties.general.border.color, "border");
@@ -1066,7 +1062,7 @@ class BasicTitles extends DigoAssetHTML {
     const height = `${this.properties.viewerHeight * (this.properties.general.size.h / 100)}px`;
     return /* @__PURE__ */ y("div", { style: {
       position: "relative",
-      backgroundColor: this.getCSSColor(this.properties.general.backgroundColor, this.properties.general.opacity),
+      backgroundColor: this.getCSSColor(this.properties.general.backgroundColor),
       width,
       height,
       left: this.properties.viewerWidth * (this.properties.general.position.x / 100),
