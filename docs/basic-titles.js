@@ -950,6 +950,9 @@ class BasicTitles extends DigoAssetHTML {
   getFontWidthReference() {
     return this.properties.viewerWidth * this.properties.general.size.w / 100;
   }
+  getPercentagePixelsWidth(pixels) {
+    return `${this.getFontWidthReference() * pixels / 100}px`;
+  }
   renderLiteral(literal) {
     return /* @__PURE__ */ y(
       "div",
@@ -957,7 +960,7 @@ class BasicTitles extends DigoAssetHTML {
         style: {
           textAlign: literal.align === "justify" ? literal.align : void 0,
           justifySelf: literal.align === "justify" ? void 0 : literal.align,
-          padding: "0px 10px",
+          padding: "0px " + this.getPercentagePixelsWidth(5),
           ...this.getFontStyles(literal.font, this.getFontWidthReference())
         }
       },
@@ -969,7 +972,7 @@ class BasicTitles extends DigoAssetHTML {
       "div",
       {
         style: {
-          width: "10px",
+          width: this.getPercentagePixelsWidth(5),
           height: "100%",
           border: `2px solid ${this.getCSSColor(this.properties.general.border.color)}`,
           borderRadius: "15px",
@@ -986,7 +989,7 @@ class BasicTitles extends DigoAssetHTML {
       {
         style: {
           width: "95%",
-          height: "10px",
+          height: this.getPercentagePixelsWidth(5),
           border: `1px solid ${this.getCSSColor(this.properties.general.border.color)}`,
           borderRadius: "15px",
           backgroundColor: "#00000000",
@@ -999,7 +1002,7 @@ class BasicTitles extends DigoAssetHTML {
         {
           style: {
             width: `${data.progress}%`,
-            height: "10px",
+            height: this.getPercentagePixelsWidth(5),
             borderRadius: "15px",
             backgroundColor: this.getCSSColor(data.color)
           }
@@ -1049,7 +1052,7 @@ class BasicTitles extends DigoAssetHTML {
           display: "grid",
           gridTemplateColumns: "10% 1fr",
           gridTemplateRows: "1fr",
-          gap: "5px"
+          gap: this.getPercentagePixelsWidth(5)
         }
       },
       this.renderEntityMark(data),
@@ -1070,7 +1073,7 @@ class BasicTitles extends DigoAssetHTML {
       display: "grid",
       gridTemplateColumns: "1fr",
       gridTemplateRows: "auto auto 1fr auto",
-      gap: "5px",
+      gap: this.getPercentagePixelsWidth(5),
       border: `${this.properties.general.border.size}px solid ${this.getCSSColor(this.properties.general.border.color)}`,
       borderRadius: `${this.properties.general.border.radius}px`
     } }, this.renderLiteral(this.properties.general.title), this.renderLiteral(this.properties.general.subtitle), /* @__PURE__ */ y(
@@ -1080,8 +1083,8 @@ class BasicTitles extends DigoAssetHTML {
           display: "grid",
           gridTemplateColumns: "1fr",
           gridTemplateRows: `repeat(${totalEntities}, ${100 / totalEntities}%)`,
-          gap: "10px",
-          padding: "10px 10px"
+          gap: this.getPercentagePixelsWidth(5),
+          padding: `${this.getPercentagePixelsWidth(1)} ${this.getPercentagePixelsWidth(5)}`
         }
       },
       this.getEntities().map((entity) => {
