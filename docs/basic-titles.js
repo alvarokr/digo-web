@@ -212,6 +212,16 @@ class Asset {
     };
     this.addProperty(general, property);
   }
+  addPropertyImage(general, id, defaultValue, group) {
+    const property = {
+      id,
+      group,
+      type: "image",
+      defaultValue,
+      general
+    };
+    this.addProperty(general, property);
+  }
   addPropertyFont(general, id, defaultValue, group) {
     const property = {
       id,
@@ -705,6 +715,7 @@ class DigoAssetHTML extends Asset {
     this.needsRender = true;
     this.layoutPosition = LayoutPosition.BELOW;
     this.zIndex = 0;
+    this.images = /* @__PURE__ */ new Map();
     this.childProperties = JSON.parse(JSON.stringify(properties));
     this.addPropertyOptions(true, AssetPropertyId.LAYOUT_POSITION, "below", ["below", "above"], ["MoveDown", "MoveUp"]);
     this.addPropertyNumber(true, AssetPropertyId.Z_INDEX, -100, 100, 0, 1, this.zIndex);
@@ -733,6 +744,7 @@ class DigoAssetHTML extends Asset {
         fontSize: width * font.size / 100,
         fontWeight: font.weight,
         fontStyle: font.italic ? "italic" : "normal",
+        fontVariantNumeric: "tabular-nums",
         color: this.getCSSColor(font.color ?? 0)
       };
     }
@@ -754,6 +766,28 @@ class DigoAssetHTML extends Asset {
   }
   getZIndex() {
     return this.zIndex;
+  }
+  async loadImage(propertyId, id, value) {
+    var _a;
+    if (value) {
+      this.images.set(propertyId, value);
+    } else {
+      if (id) {
+        (_a = Helper.getGlobal()) == null ? void 0 : _a.loadImage(id).then((imageData) => {
+          this.images.set(propertyId, imageData);
+          this.forceRender();
+        });
+      } else {
+        this.images.set(propertyId, "");
+      }
+    }
+  }
+  getImage(propertyId) {
+    return this.images.get(propertyId);
+  }
+  addPropertyImage(general, id, defaultValue, group) {
+    super.addPropertyImage(general, id, defaultValue, group);
+    this.loadImage(id, "", defaultValue);
   }
   updateProperty(entity, property, value, nextUpdate = 0) {
     var _a, _b, _c, _d;
@@ -784,6 +818,9 @@ class DigoAssetHTML extends Asset {
         (_c = Helper.getGlobal()) == null ? void 0 : _c.loadFont(value);
       } else if (value && value.family && property.toLowerCase().indexOf("font") !== 0) {
         (_d = Helper.getGlobal()) == null ? void 0 : _d.loadFont(value.family);
+      }
+      if (this.images.has(property)) {
+        this.loadImage(property, value);
       }
       this.forceRender();
     }
@@ -842,7 +879,7 @@ const defaultProperties = {
     subtitle: {
       text: "Subitle text",
       font: {
-        family: "Goldman",
+        family: "Unica one",
         size: 9.25,
         weight: "bold",
         italic: false,
