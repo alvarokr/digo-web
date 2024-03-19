@@ -879,7 +879,7 @@ const defaultProperties = {
     subtitle: {
       text: "Subitle text",
       font: {
-        family: "Unica one",
+        family: "Bebas Neue",
         size: 9.25,
         weight: "bold",
         italic: false,
