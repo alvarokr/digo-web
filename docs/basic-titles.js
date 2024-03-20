@@ -851,9 +851,9 @@ const defaultProperties = {
   viewerWidth: 0,
   viewerHeight: 0,
   general: {
-    backgroundColor: 3435973632,
+    backgroundColor: 3435973759,
     border: {
-      color: 0,
+      color: 4473924,
       size: 1,
       radius: 6
     },
