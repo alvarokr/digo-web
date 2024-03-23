@@ -51,7 +51,10 @@ class Helper {
         loadFont: (fontName) => {
         },
         forceRefresh: () => {
-        }
+        },
+        getAudioSampleRate: () => 48e3,
+        getAudioFrequency: (frequency) => 0,
+        getAudioFrequencies: () => new Uint8Array(1024)
       };
     }
   }
@@ -118,6 +121,21 @@ class Asset {
   }
   getZIndex() {
     return 0;
+  }
+  needsAudio() {
+    return false;
+  }
+  getAudioSampleRate() {
+    var _a;
+    return ((_a = Helper.getGlobal()) == null ? void 0 : _a.getAudioSampleRate()) || 48e3;
+  }
+  getAudioFrequency(frequency) {
+    var _a;
+    return ((_a = Helper.getGlobal()) == null ? void 0 : _a.getAudioFrequency(frequency)) || 0;
+  }
+  getAudioFrequencies() {
+    var _a;
+    return ((_a = Helper.getGlobal()) == null ? void 0 : _a.getAudioFrequencies()) || new Uint8Array(1024);
   }
   addProperty(general, property) {
     if (general) {
@@ -204,6 +222,16 @@ class Asset {
       id,
       group,
       type: "string",
+      defaultValue,
+      general
+    };
+    this.addProperty(general, property);
+  }
+  addPropertyImage(general, id, defaultValue, group) {
+    const property = {
+      id,
+      group,
+      type: "image",
       defaultValue,
       general
     };
@@ -461,8 +489,9 @@ class DigoAssetThree extends Asset {
   }
   updatePropertyColor(entity, object, color) {
     var _a;
+    console.log("update", color.toString(16), (color >>> 8).toString(16));
     if ((_a = object == null ? void 0 : object.material) == null ? void 0 : _a.color) {
-      object.material.color.setHex(color);
+      object.material.color.setHex(color >>> 8);
     }
   }
   getPropertyPosition(entity, object) {
@@ -483,7 +512,7 @@ class DigoAssetThree extends Asset {
   }
   getPropertyColor(entity, object) {
     var _a, _b;
-    return (_b = (_a = object == null ? void 0 : object.material) == null ? void 0 : _a.color) == null ? void 0 : _b.getHex();
+    return Number.parseInt(((_b = (_a = object == null ? void 0 : object.material) == null ? void 0 : _a.color) == null ? void 0 : _b.getHex().toString(16)) + "ff", 16);
   }
   tick(parameters) {
   }

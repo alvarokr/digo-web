@@ -50,7 +50,10 @@ class Helper {
         loadFont: (fontName) => {
         },
         forceRefresh: () => {
-        }
+        },
+        getAudioSampleRate: () => 48e3,
+        getAudioFrequency: (frequency) => 0,
+        getAudioFrequencies: () => new Uint8Array(1024)
       };
     }
   }
@@ -121,6 +124,21 @@ class Asset {
   }
   getZIndex() {
     return 0;
+  }
+  needsAudio() {
+    return false;
+  }
+  getAudioSampleRate() {
+    var _a;
+    return ((_a = Helper.getGlobal()) == null ? void 0 : _a.getAudioSampleRate()) || 48e3;
+  }
+  getAudioFrequency(frequency) {
+    var _a;
+    return ((_a = Helper.getGlobal()) == null ? void 0 : _a.getAudioFrequency(frequency)) || 0;
+  }
+  getAudioFrequencies() {
+    var _a;
+    return ((_a = Helper.getGlobal()) == null ? void 0 : _a.getAudioFrequencies()) || new Uint8Array(1024);
   }
   addProperty(general, property) {
     if (general) {
@@ -771,15 +789,13 @@ class DigoAssetHTML extends Asset {
     var _a;
     if (value) {
       this.images.set(propertyId, value);
+    } else if (id) {
+      (_a = Helper.getGlobal()) == null ? void 0 : _a.loadImage(id).then((imageData) => {
+        this.images.set(propertyId, imageData);
+        this.forceRender();
+      });
     } else {
-      if (id) {
-        (_a = Helper.getGlobal()) == null ? void 0 : _a.loadImage(id).then((imageData) => {
-          this.images.set(propertyId, imageData);
-          this.forceRender();
-        });
-      } else {
-        this.images.set(propertyId, "");
-      }
+      this.images.set(propertyId, "");
     }
   }
   getImage(propertyId) {
