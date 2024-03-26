@@ -489,7 +489,6 @@ class DigoAssetThree extends Asset {
   }
   updatePropertyColor(entity, object, color) {
     var _a;
-    console.log("update", color.toString(16), (color >>> 8).toString(16));
     if ((_a = object == null ? void 0 : object.material) == null ? void 0 : _a.color) {
       object.material.color.setHex(color >>> 8);
     }
@@ -512,7 +511,7 @@ class DigoAssetThree extends Asset {
   }
   getPropertyColor(entity, object) {
     var _a, _b;
-    return Number.parseInt(((_b = (_a = object == null ? void 0 : object.material) == null ? void 0 : _a.color) == null ? void 0 : _b.getHex().toString(16)) + "ff", 16);
+    return Number.parseInt(`${(_b = (_a = object == null ? void 0 : object.material) == null ? void 0 : _a.color) == null ? void 0 : _b.getHex().toString(16)}ff`, 16);
   }
   tick(parameters) {
   }
