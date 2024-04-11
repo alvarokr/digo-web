@@ -1,4 +1,4 @@
-import { S as Scene, B as BoxGeometry, M as MeshStandardMaterial, a as Mesh } from "./three.js";
+import { G as GLTFLoader, S as Scene, B as BoxGeometry, M as MeshStandardMaterial, a as Mesh } from "./three.js";
 (function polyfill() {
   const relList = document.createElement("link").relList;
   if (relList && relList.supports && relList.supports("modulepreload")) {
@@ -50,6 +50,9 @@ class Helper {
         asset: {},
         loadFont: (fontName) => {
         },
+        loadResourceAsBase64: (id) => {
+        },
+        getResourceURL: (id) => "",
         forceRefresh: () => {
         },
         getAudioSampleRate: () => 48e3,
@@ -90,7 +93,6 @@ class Helper {
     }
   }
 }
-const GENERAL_PROPERTY = true;
 const ENTITY_PROPERTY = false;
 var AssetPropertyId = /* @__PURE__ */ ((AssetPropertyId2) => {
   AssetPropertyId2["POSITION"] = "position";
@@ -266,6 +268,15 @@ class Asset {
     };
     return this.addProperty(general, property);
   }
+  addPropertyObject3D(general, id, defaultValue) {
+    const property = {
+      id,
+      type: "object3d",
+      defaultValue,
+      general
+    };
+    return this.addProperty(general, property);
+  }
   addPropertyFont(general, id, defaultValue) {
     const property = {
       id,
@@ -352,7 +363,7 @@ class Asset {
   getGeneralData() {
     return this.generalData;
   }
-  setGlobalData(data) {
+  setGeneralData(data) {
     this.generalData = data;
   }
   setViewerSize(width, height) {
@@ -570,7 +581,13 @@ class DigoAssetThree extends Asset {
     if (property && property.setter) {
       const data = entity ? this.getEntity(entity) : this.getGeneralData();
       if (data) {
-        property.setter(data, value, nextUpdate);
+        if (splittedProperties.length === 2 && property.getter) {
+          const objectValue = property.getter(data);
+          objectValue[splittedProperties[1]] = value;
+          property.setter(data, objectValue, nextUpdate);
+        } else {
+          property.setter(data, value, nextUpdate);
+        }
         setterCalled = true;
       }
     }
@@ -589,44 +606,39 @@ class DigoAssetThree extends Asset {
     }
     return super.getProperty(entity, propertyId);
   }
+  loadGLTF(id, onLoad) {
+    var _a;
+    if (id) {
+      const url = (_a = Helper.getGlobal()) == null ? void 0 : _a.getResourceURL(id);
+      console.log({ url });
+      const loader = new GLTFLoader();
+      loader.load(url, onLoad);
+    }
+  }
   tick(parameters) {
   }
 }
 const labels = {
-  colorTest: {
-    en: "Color test",
-    es: "Color de pruebas"
+  yourPropertyId: {
+    en: "English",
+    es: "Spanish"
   }
 };
 class GeneralData extends AssetGeneralData {
-  constructor() {
-    super(...arguments);
-    this.numberGlobal = 1;
-  }
 }
 class EntityData extends AssetEntityData {
-  constructor() {
-    super(...arguments);
-    this.numberEntity = 2;
-  }
 }
 class Cube extends DigoAssetThree {
   constructor(entities) {
     super();
     this.setLabels(labels);
     this.addDefaultProperties(true, true);
-    this.addPropertyNumber(GENERAL_PROPERTY, "numberGlobal", 0, 100, 0, 1, 1).setter((data, value) => {
-      data.numberGlobal = value;
-    }).getter((data) => data.numberGlobal);
     this.addPropertyColor(ENTITY_PROPERTY, "color", -1).setter((data, value) => {
       this.updatePropertyColor(data.component, value);
     }).getter((data) => this.getPropertyColor(data.component));
-    this.addPropertyNumber(ENTITY_PROPERTY, "numberEntity", 0, 100, 0, 1, 2).setter((data, value) => {
-      data.numberEntity = value;
-    }).getter((data) => data.numberEntity);
-    const globalData = new GeneralData();
-    globalData.container = new Scene();
-    this.setGlobalData(globalData);
+    const generalData = new GeneralData();
+    generalData.container = new Scene();
+    this.setGeneralData(generalData);
     entities.forEach((entity) => {
       this.createEntity(entity);
     });

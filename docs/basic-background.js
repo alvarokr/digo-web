@@ -49,6 +49,8 @@ class Helper {
         asset: {},
         loadFont: (fontName) => {
         },
+        loadResourceAsBase64: (id) => {
+        },
         forceRefresh: () => {
         },
         getAudioSampleRate: () => 48e3,
@@ -89,6 +91,7 @@ class Helper {
     }
   }
 }
+const GENERAL_PROPERTY = true;
 var LayoutPosition = /* @__PURE__ */ ((LayoutPosition2) => {
   LayoutPosition2["BELOW"] = "below";
   LayoutPosition2["ABOVE"] = "above";
@@ -264,6 +267,15 @@ class Asset {
     };
     return this.addProperty(general, property);
   }
+  addPropertyObject3D(general, id, defaultValue) {
+    const property = {
+      id,
+      type: "object3d",
+      defaultValue,
+      general
+    };
+    return this.addProperty(general, property);
+  }
   addPropertyFont(general, id, defaultValue) {
     const property = {
       id,
@@ -350,7 +362,7 @@ class Asset {
   getGeneralData() {
     return this.generalData;
   }
-  setGlobalData(data) {
+  setGeneralData(data) {
     this.generalData = data;
   }
   setViewerSize(width, height) {
@@ -837,7 +849,7 @@ class DigoAssetHTML extends Asset {
     if (value) {
       this.images.set(propertyId, value);
     } else if (id) {
-      (_a = Helper.getGlobal()) == null ? void 0 : _a.loadImage(id).then((imageData) => {
+      (_a = Helper.getGlobal()) == null ? void 0 : _a.loadResourceAsBase64(id).then((imageData) => {
         this.images.set(propertyId, imageData);
         this.forceRender();
       });
@@ -853,7 +865,7 @@ class DigoAssetHTML extends Asset {
     return super.addPropertyImage(general, id, defaultValue);
   }
   updateProperty(entity, property, value, nextUpdate = 0) {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
     if (property === AssetPropertyId.LAYOUT_POSITION) {
       this.layoutPosition = value;
       (_a = Helper.getGlobal()) == null ? void 0 : _a.forceRefresh();
@@ -863,7 +875,7 @@ class DigoAssetHTML extends Asset {
       (_b = Helper.getGlobal()) == null ? void 0 : _b.forceRefresh();
     } else {
       const splittedProperties = property.split("/");
-      let currentProperty = entity ? this.getEntity(entity) : this.childProperties.general;
+      let currentProperty = entity ? (_c = this.getEntity(entity)) == null ? void 0 : _c.component : this.childProperties.general;
       splittedProperties.forEach((id, index) => {
         if (currentProperty) {
           if (index + 1 === splittedProperties.length) {
@@ -878,9 +890,9 @@ class DigoAssetHTML extends Asset {
         }
       });
       if (property.endsWith("/family") && property.toLowerCase().indexOf("font") !== 0) {
-        (_c = Helper.getGlobal()) == null ? void 0 : _c.loadFont(value);
+        (_d = Helper.getGlobal()) == null ? void 0 : _d.loadFont(value);
       } else if (value && value.family && property.toLowerCase().indexOf("font") !== 0) {
-        (_d = Helper.getGlobal()) == null ? void 0 : _d.loadFont(value.family);
+        (_e = Helper.getGlobal()) == null ? void 0 : _e.loadFont(value.family);
       }
       if (this.images.has(property)) {
         this.loadImage(property, value);
@@ -889,6 +901,7 @@ class DigoAssetHTML extends Asset {
     }
   }
   getProperty(entity, property) {
+    var _a;
     if (property === AssetPropertyId.LAYOUT_POSITION) {
       return this.layoutPosition;
     }
@@ -896,7 +909,7 @@ class DigoAssetHTML extends Asset {
       return this.zIndex;
     }
     const splittedProperties = property.split("/");
-    let currentProperty = entity ? this.getEntity(entity) : this.childProperties.general;
+    let currentProperty = entity ? (_a = this.getEntity(entity)) == null ? void 0 : _a.component : this.childProperties.general;
     for (let i2 = 0; i2 < splittedProperties.length; i2++) {
       if (currentProperty) {
         if (i2 + 1 === splittedProperties.length) {
@@ -943,11 +956,11 @@ class BasicBackground extends DigoAssetHTML {
   }
   initialize(properties) {
     this.properties = properties;
-    this.addPropertyXY(true, AssetPropertyId.POSITION, this.properties.general.position.x, this.properties.general.position.y);
-    this.addPropertySize(true, AssetPropertyId.SIZE, { w: this.properties.general.size.w, h: this.properties.general.size.h });
-    this.addPropertyColor(true, "color", this.properties.general.color);
-    this.addPropertyImage(true, "image", this.properties.general.image);
-    this.addPropertyNumber(true, "imageOpacity", 0, 100, 0, 1, this.properties.general.imageOpacity);
+    this.addPropertyXY(GENERAL_PROPERTY, AssetPropertyId.POSITION, this.properties.general.position.x, this.properties.general.position.y);
+    this.addPropertySize(GENERAL_PROPERTY, AssetPropertyId.SIZE, { w: this.properties.general.size.w, h: this.properties.general.size.h });
+    this.addPropertyColor(GENERAL_PROPERTY, "color", this.properties.general.color);
+    this.addPropertyImage(GENERAL_PROPERTY, "image", this.properties.general.image);
+    this.addPropertyNumber(GENERAL_PROPERTY, "imageOpacity", 0, 100, 0, 1, this.properties.general.imageOpacity);
   }
   render() {
     B(/* @__PURE__ */ y(DigoAssetHTMLComponent, { assetRenderer: () => this.renderComponent() }), this.htmlSceneElement);
@@ -955,17 +968,22 @@ class BasicBackground extends DigoAssetHTML {
   renderComponent() {
     const width = `${this.properties.viewerWidth * (this.properties.general.size.w / 100)}px`;
     const height = `${this.properties.viewerHeight * (this.properties.general.size.h / 100)}px`;
-    return /* @__PURE__ */ y("div", { style: {
-      position: "relative",
-      backgroundColor: this.getCSSColor(this.properties.general.color),
-      opacity: this.properties.general.imageOpacity / 100,
-      width,
-      height,
-      left: this.properties.viewerWidth * (this.properties.general.position.x / 100),
-      top: this.properties.viewerHeight * (this.properties.general.position.y / 100),
-      backgroundImage: `url(data:image;base64,${this.getImage("image")})`,
-      backgroundSize: `${width} ${height}`
-    } });
+    return /* @__PURE__ */ y(
+      "div",
+      {
+        style: {
+          position: "relative",
+          backgroundColor: this.getCSSColor(this.properties.general.color),
+          opacity: this.properties.general.imageOpacity / 100,
+          width,
+          height,
+          left: this.properties.viewerWidth * (this.properties.general.position.x / 100),
+          top: this.properties.viewerHeight * (this.properties.general.position.y / 100),
+          backgroundImage: `url(data:image;base64,${this.getImage("image")})`,
+          backgroundSize: `${width} ${height}`
+        }
+      }
+    );
   }
 }
 const digoAssetData = {
