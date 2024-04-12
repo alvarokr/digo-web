@@ -70,6 +70,8 @@ class Helper {
         getThreeWebGLRenderer: () => {
         },
         updateMaterial: (mesh, property, value, previousValue) => {
+        },
+        setEnvironmentMap: (resourceId, alsoBackground) => {
         }
       };
     }
@@ -630,7 +632,18 @@ class DigoAssetThree extends Asset {
   updateMaterial(mesh, object, field, property, value) {
     var _a;
     (_a = Helper.getGlobal()) == null ? void 0 : _a.updateMaterial(mesh, property, value, object[field]);
-    object[field] = value;
+    const [_, subProperty] = property.split("/");
+    if (subProperty) {
+      object[field][subProperty] = value[subProperty];
+    } else {
+      Object.keys(value).forEach((key) => {
+        object[field][key] = value[key];
+      });
+    }
+  }
+  setEnvironmentMap(id, alsoBackground) {
+    var _a;
+    (_a = Helper.getGlobal()) == null ? void 0 : _a.setEnvironmentMap(id, alsoBackground);
   }
   tick(parameters) {
   }

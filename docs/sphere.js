@@ -71,7 +71,7 @@ class Helper {
         },
         updateMaterial: (mesh, property, value, previousValue) => {
         },
-        setEnvironmentMap: (resourceId) => {
+        setEnvironmentMap: (resourceId, alsoBackground) => {
         }
       };
     }
@@ -632,11 +632,18 @@ class DigoAssetThree extends Asset {
   updateMaterial(mesh, object, field, property, value) {
     var _a;
     (_a = Helper.getGlobal()) == null ? void 0 : _a.updateMaterial(mesh, property, value, object[field]);
-    object[field] = value;
+    const [_, subProperty] = property.split("/");
+    if (subProperty) {
+      object[field][subProperty] = value[subProperty];
+    } else {
+      Object.keys(value).forEach((key) => {
+        object[field][key] = value[key];
+      });
+    }
   }
-  setEnvironmentMap(id) {
+  setEnvironmentMap(id, alsoBackground) {
     var _a;
-    (_a = Helper.getGlobal()) == null ? void 0 : _a.setEnvironmentMap(id);
+    (_a = Helper.getGlobal()) == null ? void 0 : _a.setEnvironmentMap(id, alsoBackground);
   }
   tick(parameters) {
   }
@@ -660,9 +667,7 @@ class Cube extends DigoAssetThree {
     super();
     this.setLabels(labels);
     this.addDefaultProperties(true, true);
-    this.addPropertyMaterial(ENTITY_PROPERTY, "material", {}).setter((data, value, property) => {
-      this.updateMaterial(data.component, data, "material", property, value);
-    }).getter((data) => data.material);
+    this.addPropertyMaterial(ENTITY_PROPERTY, "material", {}).setter((data, value, property) => this.updateMaterial(data.component, data, "material", property, value)).getter((data) => data.material);
     const generalData = new GeneralData();
     generalData.container = new Scene();
     this.setGeneralData(generalData);
