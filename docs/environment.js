@@ -71,7 +71,7 @@ class Helper {
         },
         updateMaterial: (mesh, property, value, previousValue) => {
         },
-        setEnvironmentMap: (resourceId) => {
+        setEnvironmentMap: (resourceId, alsoBackground) => {
         }
       };
     }
@@ -632,9 +632,9 @@ class DigoAssetThree extends Asset {
     (_a = Helper.getGlobal()) == null ? void 0 : _a.updateMaterial(mesh, property, value, object[field]);
     object[field] = value;
   }
-  setEnvironmentMap(id) {
+  setEnvironmentMap(id, alsoBackground) {
     var _a;
-    (_a = Helper.getGlobal()) == null ? void 0 : _a.setEnvironmentMap(id);
+    (_a = Helper.getGlobal()) == null ? void 0 : _a.setEnvironmentMap(id, alsoBackground);
   }
   tick(parameters) {
   }
@@ -643,12 +643,17 @@ const labels = {
   imageMap: {
     en: "Image map",
     es: "Mapa de imagen"
+  },
+  alsoBackground: {
+    en: "Use also as background",
+    es: "Usar también de fondo"
   }
 };
 class GeneralData extends AssetGeneralData {
   constructor() {
     super(...arguments);
     this.imageId = "";
+    this.alsoBackground = true;
   }
 }
 class Environment extends DigoAssetThree {
@@ -656,15 +661,19 @@ class Environment extends DigoAssetThree {
     super();
     this.setLabels(labels);
     this.addPropertyImage(GENERAL_PROPERTY, "imageMap", "").setter((data, value) => {
-      this.updateImage(data, value);
+      this.updateImage(data, value, data.alsoBackground);
     }).getter((data) => data.imageId);
+    this.addPropertyBoolean(GENERAL_PROPERTY, "alsoBackground", true).setter((data, value) => {
+      this.updateImage(data, data.imageId, value);
+    }).getter((data) => data.alsoBackground);
     const generalData = new GeneralData();
     generalData.container = new Scene();
     this.setGeneralData(generalData);
   }
-  updateImage(data, id) {
+  updateImage(data, id, alsoBackground) {
     data.imageId = id;
-    this.setEnvironmentMap(id);
+    data.alsoBackground = alsoBackground;
+    this.setEnvironmentMap(id, alsoBackground);
   }
 }
 const digoAssetData = {
