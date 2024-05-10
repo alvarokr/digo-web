@@ -68,6 +68,10 @@ class Helper {
         getMIDINotesVelocity: (input) => [],
         getMIDIControlsVelocity: (input) => [],
         getThreeWebGLRenderer: () => {
+        },
+        updateMaterial: (mesh, property, value, previousValue) => {
+        },
+        setEnvironmentMap: (resourceId, alsoBackground) => {
         }
       };
     }
@@ -285,6 +289,15 @@ class Asset {
     const property = {
       id,
       type: "font",
+      defaultValue,
+      general
+    };
+    return this.addProperty(general, property);
+  }
+  addPropertyMaterial(general, id, defaultValue) {
+    const property = {
+      id,
+      type: "material",
       defaultValue,
       general
     };
@@ -586,11 +599,11 @@ class DigoAssetThree extends Asset {
       const data = entity ? this.getEntity(entity) : this.getGeneralData();
       if (data) {
         if (splittedProperties.length === 2 && property.getter) {
-          const objectValue = property.getter(data);
+          const objectValue = JSON.parse(JSON.stringify(property.getter(data)));
           objectValue[splittedProperties[1]] = value;
-          property.setter(data, objectValue, nextUpdate);
+          property.setter(data, objectValue, propertyId, nextUpdate);
         } else {
-          property.setter(data, value, nextUpdate);
+          property.setter(data, value, propertyId, nextUpdate);
         }
         setterCalled = true;
       }
@@ -613,6 +626,22 @@ class DigoAssetThree extends Asset {
   loadGLTF(id, onLoad) {
     var _a;
     (_a = Helper.getGlobal()) == null ? void 0 : _a.loadGLTF(id, onLoad);
+  }
+  updateMaterial(mesh, object, field, property, value) {
+    var _a;
+    (_a = Helper.getGlobal()) == null ? void 0 : _a.updateMaterial(mesh, property, value, object[field]);
+    const [_, subProperty] = property.split("/");
+    if (subProperty) {
+      object[field][subProperty] = value[subProperty];
+    } else {
+      Object.keys(value).forEach((key) => {
+        object[field][key] = value[key];
+      });
+    }
+  }
+  setEnvironmentMap(id, alsoBackground) {
+    var _a;
+    (_a = Helper.getGlobal()) == null ? void 0 : _a.setEnvironmentMap(id, alsoBackground);
   }
   tick(parameters) {
   }
@@ -642,6 +671,7 @@ class ImportedAsset extends DigoAssetThree {
       gltf.scene.scale.y = 0.01;
       gltf.scene.scale.z = 0.01;
       this.getContainer().add(gltf.scene);
+      console.log("gltf", gltf);
     });
     data.objectId = id;
   }
