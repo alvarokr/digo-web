@@ -56,6 +56,8 @@ class Helper {
         loadResourceAsBase64: async (id) => "",
         loadGLTF: (id, onLoad) => {
         },
+        loadRGBE: (id, onLoad) => {
+        },
         getResourceURL: (id) => "",
         forceRefresh: () => {
         },
@@ -72,6 +74,8 @@ class Helper {
         getThreeCamera: () => {
         },
         getThreeScene: () => {
+        },
+        getThreeOrbitControls: () => {
         },
         getRapierWorld: () => {
         },
@@ -111,7 +115,6 @@ class Helper {
     }
   }
 }
-const GENERAL_PROPERTY = true;
 const ENTITY_PROPERTY = false;
 var AssetPropertyId = /* @__PURE__ */ ((AssetPropertyId2) => {
   AssetPropertyId2["POSITION"] = "position";
@@ -349,6 +352,16 @@ class Asset {
       general,
       keys,
       icons
+    };
+    return this.addProperty(general, property);
+  }
+  addPropertyDropdown(general, id, defaultValue, keys) {
+    const property = {
+      id,
+      type: "dropdown",
+      defaultValue,
+      general,
+      keys
     };
     return this.addProperty(general, property);
   }
@@ -638,6 +651,10 @@ class DigoAssetThree extends Asset {
   loadGLTF(id, onLoad) {
     var _a;
     (_a = Helper.getGlobal()) == null ? void 0 : _a.loadGLTF(id, onLoad);
+  }
+  loadRGBE(id, onLoad) {
+    var _a;
+    (_a = Helper.getGlobal()) == null ? void 0 : _a.loadRGBE(id, onLoad);
   }
   updateMaterial(mesh, object, field, property, value) {
     var _a;
@@ -5794,14 +5811,13 @@ var Bg = Object.freeze({ __proto__: null, version: Cg, Vector3: GA, VectorOps: w
 class RapierUtils {
   constructor(scene, world, rapier) {
     this.mesh = new LineSegments(new BufferGeometry(), new LineBasicMaterial({ color: 16777215, vertexColors: true }));
-    this.enabled = true;
     this.world = world;
     this.rapier = rapier;
     this.mesh.frustumCulled = false;
     scene.add(this.mesh);
   }
-  updateDebug() {
-    if (this.enabled) {
+  updateDebug(debug) {
+    if (debug) {
       const { vertices, colors } = this.world.debugRender();
       this.mesh.geometry.setAttribute("position", new BufferAttribute(vertices, 3));
       this.mesh.geometry.setAttribute("color", new BufferAttribute(colors, 4));
@@ -6051,10 +6067,8 @@ const labels = {
     es: "Aleatoriedad"
   }
 };
-let WORLD;
 let RAPIER_UTILS;
 const DEFAULTS = {
-  gravity: new Vector3(0, -0.8, 0),
   maxCount: 1e3,
   customMaterial: false,
   material: { digoType: "physical", color: 16777215 },
@@ -6080,12 +6094,6 @@ const DEFAULTS = {
   angularImpulse: new Vector3(0, 0, 0)
 };
 class GeneralData extends AssetGeneralData {
-  constructor() {
-    super(...arguments);
-    this.properties = {
-      gravity: DEFAULTS.gravity
-    };
-  }
 }
 class EntityData extends AssetEntityData {
   constructor() {
@@ -6259,7 +6267,6 @@ class Thrower extends DigoAssetThree {
     const rapierWorld = (_b = Helper.getGlobal()) == null ? void 0 : _b.getRapierWorld();
     const rapierInstance = (_c = Helper.getGlobal()) == null ? void 0 : _c.getRapierInstance();
     const rapierUtils = new RapierUtils(scene, rapierWorld, rapierInstance);
-    WORLD = rapierWorld;
     RAPIER_UTILS = rapierUtils;
     this.setLabels(labels);
     const generalData = new GeneralData();
@@ -6279,24 +6286,10 @@ class Thrower extends DigoAssetThree {
     this.getContainer().add(component);
   }
   addProperties() {
-    this.addGeneralProperties();
     this.addMeshProperties();
     this.addThrowerProperties();
     this.addPhysicsProperties();
     this.addAttractorProperties();
-  }
-  addGeneralProperties() {
-    this.addPropertyBoolean(GENERAL_PROPERTY, "debug", true).setter((data, value) => {
-      if (RAPIER_UTILS) {
-        RAPIER_UTILS.enabled = value;
-      }
-    }).getter((data) => {
-      return RAPIER_UTILS.enabled ?? false;
-    });
-    this.addPropertyXYZ(GENERAL_PROPERTY, "gravity", false, DEFAULTS.gravity.x, DEFAULTS.gravity.y, DEFAULTS.gravity.z).setter((data, value) => {
-      data.properties.gravity = value;
-      WORLD.gravity = value;
-    }).getter((data) => data.properties.gravity);
   }
   addAttractorProperties() {
     this.addPropertyXYZ(ENTITY_PROPERTY, "attractorPosition", false, DEFAULTS.attractorPosition.x, DEFAULTS.attractorPosition.y, DEFAULTS.attractorPosition.z).group("attractor").setter((data, value) => {
@@ -6443,9 +6436,6 @@ class Thrower extends DigoAssetThree {
       }
     );
     super.tick(parameters);
-    if (RAPIER_UTILS) {
-      RAPIER_UTILS.updateDebug();
-    }
   }
 }
 const digoAssetData = {
