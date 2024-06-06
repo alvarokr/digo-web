@@ -1,2 +1,2 @@
 # digo-web
-Digo deployment for testing
+Digo deployment for testing.
