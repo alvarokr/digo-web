@@ -706,6 +706,10 @@ const labels = {
     en: "Distance",
     es: "Distancia"
   },
+  worldCoordinates: {
+    en: "World",
+    es: "Global"
+  },
   helper: {
     en: "Helper",
     es: "Ayudante"
@@ -730,11 +734,11 @@ const labels = {
 const DEFAULTS = {
   color: 16777215,
   intensity: 100,
-  distance: 0,
+  distance: 2,
   angle: 30,
   penumbra: 1,
   decay: 2,
-  focus: 1,
+  worldCoordinates: true,
   lookAt: { x: 0, y: 0, z: 0 },
   castShadow: true,
   helper: true
@@ -748,13 +752,13 @@ class EntityData extends AssetEntityData {
       color: new Color(DEFAULTS.color),
       intensity: DEFAULTS.intensity,
       distance: DEFAULTS.distance,
-      angle: DEFAULTS.distance,
+      angle: DEFAULTS.angle,
       penumbra: DEFAULTS.penumbra,
       decay: DEFAULTS.decay,
-      focus: DEFAULTS.focus,
+      worldCoordinates: DEFAULTS.worldCoordinates,
+      lookAt: new Vector3().copy(DEFAULTS.lookAt),
       castShadow: DEFAULTS.castShadow,
-      helper: DEFAULTS.helper,
-      lookAt: new Vector3().copy(DEFAULTS.lookAt)
+      helper: DEFAULTS.helper
     };
     this.container = new Object3D();
     this.spotLight = new SpotLight();
@@ -764,6 +768,11 @@ class EntityData extends AssetEntityData {
     this.container.add(this.helper);
     (_a = Helper.getGlobal()) == null ? void 0 : _a.getThreeScene().add(this.spotLight.target);
     this.spotLight.target = this.spotLightTarget;
+    this.spotLight.castShadow = this.properties.castShadow;
+    this.spotLight.intensity = this.properties.intensity;
+    this.spotLight.penumbra = this.properties.penumbra;
+    this.spotLight.angle = convertToRadians(this.properties.angle);
+    this.spotLight.distance = this.properties.distance;
   }
 }
 class SpotLightDigo extends DigoAssetThree {
@@ -817,10 +826,15 @@ class SpotLightDigo extends DigoAssetThree {
       data.properties.decay = value;
       data.spotLight.decay = value;
     }).getter((data) => data.properties.decay);
-    this.addPropertyNumber(ENTITY_PROPERTY, "focus", 0, 1, 2, 0.01, DEFAULTS.focus).setter((data, value) => {
-      data.properties.focus = value;
-      data.spotLight.shadow.focus = value;
-    }).getter((data) => data.properties.focus);
+    this.addPropertyBoolean(ENTITY_PROPERTY, "worldCoordinates", DEFAULTS.worldCoordinates).setter((data, value) => {
+      var _a;
+      data.properties.worldCoordinates = value;
+      if (value) {
+        (_a = Helper.getGlobal()) == null ? void 0 : _a.getThreeScene().add(data.spotLight.target);
+      } else {
+        data.container.add(data.spotLightTarget);
+      }
+    }).getter((data) => data.properties.worldCoordinates);
     this.addPropertyXYZ(ENTITY_PROPERTY, "lookAt", false, DEFAULTS.lookAt.x, DEFAULTS.lookAt.y, DEFAULTS.lookAt.z).setter((data, value) => {
       data.properties.lookAt.set(value.x, value.y, value.z);
       data.spotLightTarget.position.set(value.x, value.y, value.z);
